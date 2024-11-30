@@ -1,0 +1,80 @@
+'''from .SNS_Lambda import ASSIGN_TASK_SNS_TOPIC, sns_client, get_existing_subscriptions
+import json
+import logging
+
+# Assuming these topic ARNs are already set up and stored here to avoid repeated calls
+topic_arn = sns_client.create_topic(Name=ASSIGN_TASK_SNS_TOPIC)['TopicArn']
+
+def format_details(details_data, employee_name):
+    """Formats the details dictionary into a simple string format without quotes or curly braces."""
+    formatted_details = []
+    
+    # Add the employee_name to the details section
+    formatted_details.append(f"Employee: {employee_name}")
+    
+    if isinstance(details_data, dict):  # Check if details_data is a dictionary
+        for key, value in details_data.items():
+            if isinstance(value, list):
+                # If the value is a list, join items with commas without quotes
+                formatted_details.append(f"{key}: {', '.join([str(v) for v in value])}")
+            elif value:  # Only add the key-value pair if the value is not empty
+                formatted_details.append(f"{key}: {value}")
+    else:
+        # If details_data is not a dictionary, log this for debugging
+        logging.warning(f"Expected details_data to be a dictionary, but got {type(details_data)} instead.")
+        formatted_details.append(f"Details: {details_data}")  # Fallback to showing the string directly
+
+    return ", ".join(formatted_details)
+
+
+def publish_message_to_sns(topic_name, message_data):
+    """Publishes a structured message based on user-provided data to the specified SNS topic."""
+    try:
+        # Extract necessary fields from the input message data
+        type_message = message_data.get("type", "No Type")
+        details_message = message_data.get("details", {})
+        employee_name = message_data.get("employee_name", "Unknown Employee")
+        
+        assigned_to = message_data.get("assigned_to")  # Directly extract email from 'assigned_to' field
+        print(f"Assigned to employee: {assigned_to}")  # Debugging line
+        
+        if not assigned_to:
+            print("Error: 'assigned_to' key is missing in the message data.")
+            return  # or handle the error in some other way
+        
+        # Format the details as a simple string
+        formatted_details = format_details(details_message, employee_name)
+        
+        # Create the message structure to send
+        message = f"Type: {type_message}\nDetails: {formatted_details}"
+
+        # Debug: Log the entire message structure before publishing
+        print(f"Message to be published:\n{message}")
+        
+        # Use the email from the assigned_to field
+        assigned_employee_email = assigned_to
+        print(f"sending to email:\n{assigned_employee_email}")
+        
+        if not assigned_employee_email:
+            print("Assigned employee email not found!")
+            return
+        
+        # Send the message only to the assigned employee
+        sns_client.publish(
+            TopicArn=topic_arn,
+            Message=message,
+            MessageAttributes={
+                'email': {
+                    'DataType': 'String',
+                    'StringValue': assigned_employee_email
+                }
+            }
+        )
+        
+        # Debug: Confirm message was published
+        print(f"Message successfully published to {assigned_employee_email}")
+
+    except json.JSONDecodeError as e:
+        print(f"JSON encoding error while publishing to {topic_name}: {str(e)}")
+    except Exception as e:
+        print(f"Error publishing message to SNS topic {topic_name}: {str(e)}")'''

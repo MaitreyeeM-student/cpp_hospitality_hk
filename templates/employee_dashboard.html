@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Employee Dashboard - Hotel Management{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4 text-primary">Employee Dashboard</h2>
+
+    <!-- Task Completion Summary -->
+    <div class="mb-4">
+        <h3>Task Summary</h3>
+        {% for user_id, summary in task_summary.items() %}
+            
+            {% for status, count in summary.items() %}
+                <p><strong>{{ status }}:</strong> {{ count }} tasks</p>
+            {% endfor %}
+        {% endfor %}
+    </div>
+
+    <!-- Dropdown Button to View Tasks, Always Expanded Until Toggled -->
+    <div class="mb-4">
+        <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#employeeTasks" aria-expanded="true" aria-controls="employeeTasks">
+            View Your Assigned Tasks
+        </button>
+    </div>
+
+    <div class="collapse show" id="employeeTasks">
+        <h4 class="mb-3">Your Assigned Tasks</h4>
+        
+        {% if tasks %}
+            <ul class="list-group">
+                {% for task in tasks %}
+                    <li class="list-group-item">
+                        <div>
+                            <strong>Room:</strong> {{ task.room }}<br>
+                            <strong>Task:</strong> {{ task.description }}<br>
+                            <strong>Priority:</strong> 
+                            <span class="badge 
+                                {% if task.priority == 'High' %}
+                                    bg-danger
+                                {% elif task.priority == 'Medium' %}
+                                    bg-warning
+                                {% elif task.priority == 'Low' %}
+                                    bg-success
+                                {% else %}
+                                    bg-secondary
+                                {% endif %}
+                            ">{{ task.priority }}</span>
+                            <br>
+                            
+                            {% if task.complete %}
+                                {% if task.completed_time %}
+                                    <p class="text-success mt-2">Completed on {{ task.completed_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                                {% else %}
+                                    <p class="text-warning mt-2">Completion date not available</p>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+
+                        <!-- Action Buttons Positioned Below Task Information -->
+                        {% if not task.complete %}
+                            <div class="mt-3">
+                                <form action="{{ url_for('main.complete_task', task_id=task.id) }}" method="post" enctype="multipart/form-data">
+                                    <label for="image-{{ task.id }}" class="form-label">Optional Image Upload</label>
+                                    <input type="file" class="form-control mb-2" id="image-{{ task.id }}" name="image" accept="image/png, image/jpeg">
+                                    <button type="submit" class="btn btn-primary w-100">Mark as Complete</button>
+                                </form>
+                            </div>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-muted">No tasks assigned to you currently.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

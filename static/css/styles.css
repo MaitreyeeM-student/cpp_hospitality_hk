@@ -1,0 +1,112 @@
+/* static/css/styles.css */
+body {
+    background-image: url('../images/hotel.jpg'); 
+    background-size: cover;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    color: #ffffff;
+}
+
+.container {
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.list-group-item {
+    display: flex;
+    align-items: center;
+    color: #000;
+}
+
+/* Toggle button style */
+.toggle-complete-btn {
+    margin-right: 10px;
+    border: 2px solid #060000; /* Set the border color */
+    background-color: transparent; /* Keep the background transparent */
+    width: 40px; /* Set a fixed width */
+    height: 40px; /* Set a fixed height */
+    padding: 0; /* Remove padding */
+    display: flex; /* Use flexbox to center the icon */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    transition: background-color 0.3s; /* Smooth background transition */
+}
+
+.toggle-complete-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2); /* Change background color on hover */
+}
+
+
+/* Change button color when completed */
+.toggle-complete-btn.btn-dark {
+    background-color: #000000; /* Change background to black for completed */
+    color: #ffffff; /* Set text color to white */
+}
+
+/* Navbar Styles */
+.navbar {
+    background-color: rgba(0, 0, 0, 0.7) !important; /* Semi-transparent black */
+    backdrop-filter: blur(10px); /* Optional: adds a blur effect to the background */
+}
+
+.navbar .nav-link {
+    color: #ffffff; /* Set navbar link color */
+}
+
+/* Navbar Brand Styles */
+.navbar-brand {
+    background-color: rgba(255, 255, 255, 0.1); /* Light transparent background */
+    color: #ffffff; /* White text color */
+    padding: 10px 15px; /* Add some padding around the text */
+    border-radius: 5px; /* Rounded corners */
+    font-family: 'Arial', sans-serif; /* Change to a professional font */
+    font-weight: bold; /* Bold text */
+    transition: background-color 0.3s; /* Smooth transition on hover */
+}
+
+/* Change background color on hover */
+.navbar-brand:hover {
+    background-color: rgba(255, 255, 255, 0.2); /* Darker background on hover */
+}
+
+.username-text {
+    margin-right: 20px; /* Space between username and buttons */
+    color: #ffffff; /* Ensure username color is visible */
+}
+
+/* Align username with other navbar buttons */
+.navbar .navbar-nav {
+    align-items: center; /* Center align items vertically */
+}
+
+/* Style the dropdown */
+select.form-control {
+    background-color: rgba(255, 255, 255, 0.8); /* Light background for dropdown */
+    color: #000; /* Set text color to black for visibility */
+    border: 1px solid #ccc; /* Light border for contrast */
+    border-radius: 5px; /* Optional: rounded corners */
+    padding: 10px; /* Ensure padding for proper display */
+}
+
+/* Style the dropdown options */
+select.form-control option {
+    background-color: #fff; /* Light background for options */
+    color: #000; /* Black text color for options */
+}
+
+/* Hover effect for dropdown options */
+select.form-control:hover, select.form-control:focus {
+    background-color: #f0f0f0; /* Slightly lighter background on hover/focus */
+    border-color: #007bff; /* Blue border on hover/focus */
+}
+
+/* Input fields styling */
+input.form-control {
+    background-color: rgba(255, 255, 255, 0.8); /* Light background for input fields */
+    color: #000; /* Black text color for input fields */
+    border: 1px solid #ccc; /* Light border for input fields */
+    border-radius: 5px;
+    padding: 10px;
+}
+

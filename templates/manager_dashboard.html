@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}Manager Dashboard - Hotel Management{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4 text-primary">Manager Dashboard</h2>
+    
+    <!-- Task Completion Summary -->
+    <div class="mb-4">
+        <h3>Task Completion Summary</h3>
+        {% for status, count in task_summary.items() %}
+            <p><strong>{{ status }}:</strong> {{ count }} tasks</p>
+        {% endfor %}
+    </div>
+
+    <!-- Task Assignment Form -->
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <h4 class="mb-3">Assign Tasks</h4>
+            <form action="{{ url_for('main.assign_task') }}" method="POST">
+                <div class="mb-3">
+                    <label for="room" class="form-label">Room</label>
+                    <select class="form-control" id="room" name="room" required>
+                        {% for room in rooms %}
+                            <option value="{{ room }}">{{ room }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="priority" class="form-label">Priority</label>
+                    <select name="priority" id="priority" class="form-control" required>
+                        {% for priority_name in custom_priorities.keys() %}
+                            <option value="{{ priority_name }}" {% if priority_name == 'Normal' %}selected{% endif %}>
+                            {{ priority_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="description" class="form-label">Tasks</label>
+                    <select class="form-control" id="description" name="description" multiple required>
+                        {% for task in predefined_tasks %}
+                            <option value="{{ task }}">{{ task }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="employee_id" class="form-label">Assign to Employee</label>
+                    <select class="form-control" id="employee_id" name="employee_id" required>
+                        {% for employee in employees %}
+                            {% if employee.role != 'Manager' %}
+                                <option value="{{ employee.id }}">{{ employee.name }} - {{ employee.employee_number }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary mt-3">Assign Tasks</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dropdown to View All Room Tasks -->
+    <div class="mb-4">
+        <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#allRoomsTasks" aria-expanded="true" aria-controls="allRoomsTasks">
+            View All Rooms' Tasks
+        </button>
+    </div>
+
+    <div class="collapse show" id="allRoomsTasks">
+        <div>
+            {% for room in rooms %}
+                <div class="room-tasks mb-4">
+                    <h5 class="text-secondary">Room {{ room }}</h5>
+                    <ul class="list-group">
+                        {% for task_with_assigner in tasks %}
+                            {% if task_with_assigner.task.room == room %}
+                                <li class="list-group-item">
+                                    <div class="task-info">
+                                        <strong>Task:</strong> <span class="task-description">{{ task_with_assigner.task.description }}</span><br>
+                                        <strong>Assigned to:</strong> {{ task_with_assigner.assigned_to.name }}<br>
+                                        {% if task_with_assigner.task.complete %}
+                                            <span class="badge bg-success">Completed</span>
+                                            
+                                           <!-- Display Task Image if it exists -->
+                                            {% if task_with_assigner.task.image_url %}
+                                                <div>
+                                                    <strong>Image:</strong>
+                                                    <img src="{{ task_with_assigner.task.image_url }}" alt="Task Image">
+                                                </div>
+                                            {% else %}
+                                                <p>No image available for this task.</p>
+                                            {% endif %}
+                                        {% endif %} <!-- End of task completion check -->
+                                    </div>
+                                    <div class="task-actions mt-2">
+                                        {% if task_with_assigner.task.complete %}
+                                            <!-- Verify Task Button -->
+                                            <form action="{{ url_for('main.verify_task', task_id=task_with_assigner.task.id) }}" method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary">Verify</button>
+                                            </form>
+                                        {% else %}
+                                            <!-- Update and Delete Buttons -->
+                                            <form action="{{ url_for('main.update_task', task_id=task_with_assigner.task.id) }}" method="post" class="d-inline update-form">
+                                                <input type="hidden" name="description" class="description-input" value="{{ task_with_assigner.task.description }}">
+                                                <button type="button" class="btn btn-sm btn-outline-primary update-btn">Update</button>
+                                            </form>
+                                            <form action="{{ url_for('main.delete_task', task_id=task_with_assigner.task.id) }}" method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="list-group-item text-muted">No tasks assigned</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Get all update buttons
+        document.querySelectorAll(".update-btn").forEach(function (button) {
+            button.addEventListener("click", function () {
+                const listItem = button.closest(".list-group-item");
+                const descriptionSpan = listItem.querySelector(".task-description");
+                const descriptionInput = listItem.querySelector(".description-input");
+
+                if (descriptionSpan.isContentEditable) {
+                    // Save mode: disable editing and submit the form
+                    descriptionSpan.contentEditable = "false";
+                    descriptionInput.value = descriptionSpan.textContent.trim();
+                    button.textContent = "Update";  // Reset button text
+                    button.closest("form").submit();
+                } else {
+                    // Edit mode: enable editing
+                    descriptionSpan.contentEditable = "true";
+                    descriptionSpan.focus();
+                    button.textContent = "Save";  // Change button text
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

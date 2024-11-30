@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Test Dashboard - Hotel Management{% endblock %}
+
+{% block content %}
+    <h1>Test Dashboard</h1>
+
+    <!-- Total tasks completion pie chart -->
+    <h2>Total Tasks Completion (Last Week)</h2>
+    <img src="data:image/png;base64,{{ total_pie_chart }}" alt="Total Tasks Completion" style="max-width: 500px;">
+
+    <h2>Employees</h2>
+    <ul class="employee-list">
+        {% for employee in employees %}
+            <li>
+                <a href="#" onclick="showEmployeeChart('{{ employee.id }}')">{{ employee.name }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <!-- Employee-specific pie charts (hidden by default) -->
+    <div id="employee-charts" style="display:none;">
+        <h3>Employee Task Completion</h3>
+        <img id="employee-pie-chart" src="" alt="Employee Task Completion" style="max-width: 500px;">
+    </div>
+
+    <script>
+        // Function to show the individual employee pie chart
+        function showEmployeeChart(employeeId) {
+            // Use the employee ID to get the chart data from the server-side context
+            var chartBase64 = '{{ employee_pie_charts.get("'+employeeId+'", "") }}';  // Get the specific chart for the selected employee
+            if (chartBase64) {
+                document.getElementById('employee-pie-chart').src = "data:image/png;base64," + chartBase64;
+                document.getElementById('employee-charts').style.display = 'block';
+            } else {
+                alert("Chart not available for this employee.");
+            }
+        }
+    </script>
+
+{% endblock %}

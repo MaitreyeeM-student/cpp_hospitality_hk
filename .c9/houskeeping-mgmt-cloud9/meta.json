@@ -1,0 +1,5 @@
+{
+  "id": "houskeeping-mgmt-cloud9",
+  "configuration": "file:///home/ec2-user/environment/.c9",
+  "name": "houskeeping-mgmt-cloud9"
+}
