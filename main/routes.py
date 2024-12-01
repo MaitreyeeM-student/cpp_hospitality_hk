@@ -2,7 +2,7 @@
 
 from flask import render_template, redirect, url_for, request, session, flash
 from datetime import datetime
-from main.models import db, Employee, Task, TaskHistory, rooms, predefined_tasks,custom_priorities, status_mapping, TASK_STATUS
+from .models import db, Employee, Task, TaskHistory, rooms, predefined_tasks,custom_priorities, status_mapping, TASK_STATUS
 from task_priority_summary_verify_utils.priority import Priority  
 from task_priority_summary_verify_utils.verify import TaskVerification, TaskManager 
 from task_priority_summary_verify_utils.summary import Reporting
@@ -12,12 +12,9 @@ import os
 import uuid
 from main.s3_lamdba import create_bucket, upload_file_to_s3, generate_presigned_url, trigger_lambda_image_processing
 from main.SNS_SQS import publish_message_to_sns
-
-
-# Import the blueprint to register the routes
 from . import main_bp
 
-# Manager-related routes
+# Manager
 
 # Manager dashboard route
 @main_bp.route('/manager_dashboard')
@@ -53,20 +50,18 @@ def manager_dashboard():
 
 @main_bp.route('/assign_task', methods=['POST'])
 def assign_task():
-    # Verify that the user is logged in as a manager
     if 'user_id' not in session or not Employee.query.get(session['user_id']).role == 'Manager':
         flash('You need to be logged in as a manager to assign tasks.')
         return redirect(url_for('auth.login'))
 
     user = Employee.query.get(session['user_id'])
     
-    # Retrieve form data
     room = request.form['room']
-    descriptions = request.form.getlist('description')  # Support for multiple descriptions
+    descriptions = request.form.getlist('description') 
     employee_id = request.form['employee_id']
     priority_level = request.form['priority']
 
-    # Initialize priority
+    #  priority
     try:
         priority = Priority(custom_priorities)
         priority.set_priority(priority_level)
@@ -80,29 +75,25 @@ def assign_task():
         flash('Employee not found.')
         return redirect(url_for('main.manager_dashboard'))
 
-    # Enforce the room limit of 5 incomplete rooms
+    # the room limit of 5 incomplete rooms
     incomplete_rooms = db.session.query(Task.room).filter_by(
         assigned_to=assigned_to.id, complete=False
     ).distinct().all()
     unique_incomplete_rooms = {room[0] for room in incomplete_rooms}
 
-    # If the employee has 5 incomplete rooms, show a flash message and return
     if len(unique_incomplete_rooms) >= 5:
         flash('This employee already has the maximum of 5 rooms assigned with incomplete tasks.')
         return redirect(url_for('main.manager_dashboard'))
 
-    # Assign tasks if requirements are met
     for description in descriptions:
         task = Task(room=room, description=description, assigned_to=assigned_to.id, assigned_by=user.id, assigned_time=datetime.now())
         db.session.add(task)
 
-    
-    # Prepare the notification message with the full task details
     message = {
     "type": "Task Assigned",
     "details": {
         "room": room,
-        "descriptions": descriptions,  # Assuming descriptions can be a list
+        "descriptions": descriptions,  
         "priority": priority_level
     },
     "employee_name": assigned_to.name,
@@ -113,16 +104,13 @@ def assign_task():
     
     publish_message_to_sns(ASSIGN_TASK_SNS_TOPIC, message)
 
-    # Commit all changes after tasks are added
+    # Commit all changes 
     db.session.commit()
 
     flash('Task assigned successfully!')
     return redirect(url_for('main.manager_dashboard'))
 
-
-
-
-# Verify task (Manager only)
+# Verify task 
 @main_bp.route('/verify_task/<int:task_id>', methods=['POST'])
 def verify_task(task_id):
     task = Task.query.get(task_id)
@@ -143,7 +131,6 @@ def verify_task(task_id):
         statuses=TASK_STATUS,
         verification_key=verification_key
     )
-    
     
     tasks = {task.id: task_instance}
     task_manager = TaskManager(tasks=tasks, verification_key=verification_key)
@@ -172,7 +159,7 @@ def verify_task(task_id):
     return redirect(url_for('main.manager_dashboard'))
 
 
-# Update task description (Manager only)
+# Update task description
 @main_bp.route('/update_task/<int:task_id>', methods=['POST'])
 def update_task(task_id):
     task = Task.query.get(task_id)
@@ -186,7 +173,7 @@ def update_task(task_id):
     return redirect(url_for('main.manager_dashboard'))
 
 
-# Delete task (Manager only)
+# Delete task 
 @main_bp.route('/delete_task/<int:task_id>', methods=['POST'])
 def delete_task(task_id):
     task = Task.query.get(task_id)
@@ -200,9 +187,9 @@ def delete_task(task_id):
     return redirect(url_for('main.manager_dashboard'))
 
 
-# Employee-related routes
+# Employee
 
-# View tasks based on role (Manager or Employee)
+# View tasks based on role
 @main_bp.route('/tasks', methods=['GET'])
 def view_tasks():
     if 'user_id' not in session:
@@ -214,8 +201,6 @@ def view_tasks():
 
     return render_template('employee_dashboard.html', tasks=tasks)
 
-
-# Employee dashboard displaying assigned tasks
 @main_bp.route('/employee_dashboard')
 def employee_dashboard():
     if 'user_id' not in session:
@@ -239,8 +224,6 @@ def employee_dashboard():
 
     return render_template('employee_dashboard.html', tasks=tasks, task_summary=individual_task_summary)
 
-
-# Complete task route (with optional image upload) in routes.py
 @main_bp.route('/complete_task/<int:task_id>', methods=['POST'])
 def complete_task(task_id):
     task = Task.query.get(task_id)
@@ -251,25 +234,23 @@ def complete_task(task_id):
         # Optional image upload
         file = request.files.get("image")
         if file and file.filename:  # If a file is uploaded
-            # Validate file type (ensure it's an image)
+            # Validate file type
             allowed_extensions = {'png', 'jpg', 'jpeg'}
             if file and '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions:
                 filename = secure_filename(file.filename)
-                # Optionally use a UUID to avoid conflicts with the original file names
+                # UUID to avoid conflicts with the original file names
                 key = f"task_images/{task_id}/{uuid.uuid4()}_{filename}"
-
-                # Ensure bucket exists and upload the file
-                create_bucket()  # This ensures the bucket is created if it doesn't exist
+                
+                create_bucket() 
                 try:
-                    s3_url = upload_file_to_s3(file, key)  # upload the file and get the pre-signed URL
-                    task.image_url = s3_url  # Store the S3 URL of the uploaded image in the task record
+                    s3_url = upload_file_to_s3(file, key)  
+                    task.image_url = s3_url  
                     db.session.commit()
                     
-                    #get lambda processed key
                     processed_key = trigger_lambda_image_processing(key)
                     processed_s3_url = generate_presigned_url(processed_key)
                     if processed_s3_url:
-                        task.image_url = processed_s3_url  # Update task with the processed image URL
+                        task.image_url = processed_s3_url  
                     else:
                         flash("Error generating presigned URL for processed image.")
                         return redirect(url_for("main.employee_dashboard"))
@@ -280,20 +261,18 @@ def complete_task(task_id):
                 flash("Invalid file type. Allowed types are: png, jpg, jpeg.")
                 return redirect(url_for("main.employee_dashboard"))
 
-        # If the image_url is already present in the task, regenerate the pre-signed URL if necessary
         if task.image_url:
             # Check if the pre-signed URL is valid or has expired
-            # Optionally, you can call `generate_presigned_url()` here if you need to regenerate the URL
+            
             s3_url = task.image_url
             #  regenerate url (if expired)
             # task.image_url = generate_presigned_url(bucket_name, key)
 
-        # Update task as complete
+        
         task.complete = True
         task.completed_time = datetime.now()
-        db.session.commit()  # Save the updated task in the database
+        db.session.commit()  
 
-        # Prepare notification message for task completion
         employee = Employee.query.get(user_id)
         assigned_by_employee = Employee.query.get(task.assigned_by)
         

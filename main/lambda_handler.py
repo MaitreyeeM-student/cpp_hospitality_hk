@@ -13,12 +13,12 @@ def resize_image(image_data, size=(300, 300)):
         image = Image.open(io.BytesIO(image_data))
         logging.info(f"Image loaded. Format: {image.format}, Size: {image.size}")
         
-        image = image.resize(size, Image.Resampling.LANCZOS)  # Use LANCZOS for high-quality resizing
+        image = image.resize(size, Image.Resampling.LANCZOS) 
         logging.info(f"Image resized to: {size}")
 
         output = io.BytesIO()
-        image.save(output, format='JPEG')  # Save as JPEG; change format as needed
-        output.seek(0)  # Move to the beginning of the BytesIO buffer
+        image.save(output, format='JPEG')  
+        output.seek(0)  
         logging.info("Image resize completed and saved to memory")
         return output.getvalue()
     except Exception as e:

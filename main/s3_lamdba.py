@@ -26,7 +26,6 @@ lambda_client = boto3.client('lambda', region_name=AWS_REGION)
 
 def create_bucket(bucket_name=AWS_BUCKET_NAME):
     try:
-        # Check if the bucket exists
         s3_client.head_bucket(Bucket=bucket_name)
         print(f"Bucket '{bucket_name}' already exists.")
     except ClientError as e:
@@ -75,7 +74,7 @@ def trigger_lambda_image_processing(original_key):
         response = lambda_client.invoke(
             FunctionName=LAMBDA_FUNCTION_NAME,
             InvocationType='RequestResponse',  # Synchronous invocation
-            Payload=json.dumps(payload)  # The payload data for the Lambda function
+            Payload=json.dumps(payload) 
         )
         
         status_code = response['StatusCode']

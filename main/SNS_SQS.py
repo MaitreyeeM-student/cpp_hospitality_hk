@@ -5,12 +5,10 @@ from .models import Employee
 from dotenv import load_dotenv
 import json
 
-# Load environment variables from .env file
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 
-# Initialize Boto3 clients
 sns_client = boto3.client('sns', region_name='us-east-1')
 sqs_client = boto3.client('sqs', region_name='us-east-1')
 
@@ -20,11 +18,8 @@ ASSIGN_TASK_SQS_QUEUE = 'assign_task_queue'
 
 AWS_IAM_ROLE_ARN = os.getenv('AWS_IAM_ROLE_ARN')
 
-# Setup logging configuration
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def setup_notification_services():
-    """Set up SNS and SQS resources."""
     # Create SNS topic
     sns_topic_arn = create_sns_topic('assign_task_notifications')
     if not sns_topic_arn:
@@ -37,18 +32,14 @@ def setup_notification_services():
         logging.error("Failed to create SQS queue.")
         return
 
-    # Set the policy on SQS to allow SNS to send messages
     set_sqs_policy_for_sns(queue_url, sns_topic_arn)
 
-    # Subscribe the SQS queue to SNS topic
     subscribe_sqs_to_sns(sns_topic_arn, queue_url)
 
-    # Subscribe employees (if needed)
     subscribe_new_employees_to_topic()
 
 
 def get_employee_email(assigned_to):
-    """Fetch the email address of the employee based on assigned_to."""
     logging.info(f"Fetching email for employee ID: {assigned_to}")
     employee = Employee.query.filter_by(id=assigned_to).first()
     if employee and employee.email:
@@ -59,7 +50,6 @@ def get_employee_email(assigned_to):
 
 
 def create_sns_topic(topic_name):
-    """Creates an SNS topic if it doesn't exist."""
     try:
         response = sns_client.create_topic(Name=topic_name)
         topic_arn = response.get('TopicArn')
@@ -77,7 +67,7 @@ def create_sns_topic(topic_name):
         return None
 
 
-def get_sqs_queue_url(queue_name): #Get url of exsiting SQS
+def get_sqs_queue_url(queue_name):
     try:
         response = sqs_client.list_queues()
         logging.info(f"List of queues: {response.get('QueueUrls', [])}")
@@ -94,7 +84,6 @@ def get_sqs_queue_url(queue_name): #Get url of exsiting SQS
 
 
 def create_sqs_queue(queue_name):
-    """Creates an SQS queue if it doesn't exist."""
     queue_url = get_sqs_queue_url(queue_name)
     if not queue_url:
         try:
@@ -109,7 +98,6 @@ def create_sqs_queue(queue_name):
     return queue_url
     
 def set_sqs_policy_for_sns(queue_url, sns_topic_arn):
-    """Set the correct policy on the SQS queue to allow SNS to send messages."""
     try:
         # Fetch the ARN of the SQS queue using its URL
         sqs_queue_arn = sqs_client.get_queue_attributes(
@@ -172,7 +160,6 @@ def subscribe_sqs_to_sns(sns_topic_arn, sqs_queue_url):
 
 
 def subscribe_to_sns(topic_arn, email):
-    """Subscribe an email address to an SNS topic."""
     try:
         sns_client.subscribe(
             TopicArn=topic_arn,
@@ -184,7 +171,6 @@ def subscribe_to_sns(topic_arn, email):
         logging.error(f"Error subscribing {email} to SNS topic {topic_arn}: {str(e)}")
 
 def get_existing_subscriptions(topic_arn):
-    """Get all existing subscriptions for a specific SNS topic."""
     subscriptions = []
     try:
         response = sns_client.list_subscriptions_by_topic(TopicArn=topic_arn)
@@ -196,22 +182,19 @@ def get_existing_subscriptions(topic_arn):
 
 
 def subscribe_new_employees_to_topic():
-    """Subscribe all staff employees to the SNS topic if they are not already subscribed."""
     logging.info("Checking and subscribing staff employees to the SNS topic.")
     
-    # Get the ARN for the SNS topic
     assign_topic_arn = create_sns_topic(ASSIGN_TASK_SNS_TOPIC)
     if not assign_topic_arn:
         logging.error(f"Failed to create or get SNS topic '{ASSIGN_TASK_SNS_TOPIC}' ARN.")
         return
 
-    # Get the existing subscriptions for the topic
     existing_subscriptions = get_existing_subscriptions(assign_topic_arn)
 
     # Fetch all employees with role 'staff'
     staff_employees = Employee.query.filter_by(role='Staff').all()
     
-    # Subscribe all staff employees who are not already subscribed
+
     for employee in staff_employees:
         email = employee.email
         if email and email not in existing_subscriptions:
@@ -224,23 +207,19 @@ def subscribe_new_employees_to_topic():
 topic_arn = sns_client.create_topic(Name=ASSIGN_TASK_SNS_TOPIC)['TopicArn']
 
 def format_details(details_data, employee_name):
-    """Formats the details dictionary into a simple string format without quotes or curly braces."""
     formatted_details = []
     
-    # Add the employee_name to the details section
     formatted_details.append(f"Employee: {employee_name}")
     
-    if isinstance(details_data, dict):  # Check if details_data is a dictionary
+    if isinstance(details_data, dict):  
         for key, value in details_data.items():
             if isinstance(value, list):
-                # If the value is a list, join items with commas without quotes
                 formatted_details.append(f"{key}: {', '.join([str(v) for v in value])}")
-            elif value:  # Only add the key-value pair if the value is not empty
+            elif value:  
                 formatted_details.append(f"{key}: {value}")
     else:
-        # If details_data is not a dictionary, log this for debugging
         logging.warning(f"Expected details_data to be a dictionary, but got {type(details_data)} instead.")
-        formatted_details.append(f"Details: {details_data}")  # Fallback to showing the string directly
+        formatted_details.append(f"Details: {details_data}")  
 
     return ", ".join(formatted_details)
 
@@ -253,7 +232,7 @@ def publish_message_to_sns(topic_name, message_data):
         employee_name = message_data.get("employee_name", "Unknown Employee")
         
         assigned_to = message_data.get("assigned_to")
-        print(f"Assigned to employee: {assigned_to}")  # print the assign to detail
+        print(f"Assigned to employee: {assigned_to}")  
         
         if not assigned_to:
             print("Error: 'assigned_to' key is missing in the message data.")
@@ -281,7 +260,7 @@ def publish_message_to_sns(topic_name, message_data):
             }
         )
         
-        # Debug: Confirm message was published
+    
         print(f"Message successfully published to {assigned_employee_email}")
 
     except json.JSONDecodeError as e:
@@ -294,7 +273,6 @@ def publish_message_to_sns(topic_name, message_data):
 
 if __name__ == '__main__':
     logging.info("Starting application.")
-    # Step 1: Create the SNS topic
     '''sns_topic_arn = create_sns_topic(ASSIGN_TASK_SNS_TOPIC)
     if not sns_topic_arn:
         logging.error(f"Failed to create or get SNS topic '{ASSIGN_TASK_SNS_TOPIC}' ARN.")
