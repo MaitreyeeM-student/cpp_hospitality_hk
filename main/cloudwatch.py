@@ -32,7 +32,6 @@ class CloudWatchLogHandler(logging.Handler):
             print(f"Error creating or retrieving log stream: {e}")
 
     def _create_log_group_if_not_exists(self):
-        """Creates the log group if it doesn't exist."""
         try:
             response = cloudwatch_logs.describe_log_groups(logGroupNamePrefix=self.log_group)
             log_groups = response.get('logGroups', [])

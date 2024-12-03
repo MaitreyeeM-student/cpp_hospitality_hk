@@ -26,7 +26,7 @@ def create_app():
 
     
     db.init_app(app)
-    migrate.init_app(app, db)  # Initialize Migrate with the app and db
+    migrate.init_app(app, db) 
     
     
     with app.app_context():
@@ -49,5 +49,5 @@ if __name__ == '__main__':
     with app.app_context():
         
         #'''db.drop_all()''' # to reset or initialize the database tables
-        db.create_all()  # Create all tables if they don't exist
+        db.create_all()  
     app.run(debug=True, port=8080)

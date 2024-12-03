@@ -4,6 +4,8 @@ import os
 import logging
 import json
 from dotenv import load_dotenv
+from .cloudwatch_logger import configure_cloudwatch_logging  
+
 
 load_dotenv()
 
@@ -13,13 +15,14 @@ LAMBDA_FUNCTION_NAME = 'image-resize-function'
 
 AWS_IAM_ROLE_ARN = os.getenv('AWS_IAM_ROLE_ARN')
 
-logging.basicConfig(level=logging.INFO)
+
+configure_cloudwatch_logging()
+logger = logging.getLogger(__name__)
 logging.info(f"AWS_REGION is set to: {AWS_REGION}")
 
 if not AWS_REGION:
     raise ValueError("AWS_REGION is not set correctly. Please specify a valid region.")
 
-# Create AWS service clients with the region set explicitly
 s3_client = boto3.client("s3", region_name=AWS_REGION)
 lambda_client = boto3.client('lambda', region_name=AWS_REGION)
 
@@ -73,7 +76,7 @@ def trigger_lambda_image_processing(original_key):
         
         response = lambda_client.invoke(
             FunctionName=LAMBDA_FUNCTION_NAME,
-            InvocationType='RequestResponse',  # Synchronous invocation
+            InvocationType='RequestResponse', 
             Payload=json.dumps(payload) 
         )
         

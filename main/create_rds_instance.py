@@ -1,5 +1,11 @@
 import boto3
+import logging
 from botocore.exceptions import ClientError
+from .cloudwatch_logger import configure_cloudwatch_logging  
+
+
+configure_cloudwatch_logging()
+logger = logging.getLogger(__name__)
 
 def create_rds_instance():
     rds_client = boto3.client('rds', region_name='us-east-1') 

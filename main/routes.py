@@ -22,13 +22,13 @@ def manager_dashboard():
     employees = Employee.query.all()
     tasks = db.session.query(Task, Employee).join(Employee, Task.assigned_to == Employee.id).all()
     
-    # Retrieve the assigner information and include the image URL
+    
     tasks_with_assigner = [
         {
             "task": task,
             "assigned_to": assigned_to,
-            "assigned_by": Employee.query.get(task.assigned_by),  # Retrieve the assigner
-            "image_url": task.image_url  # Add the image URL to the task data
+            "assigned_by": Employee.query.get(task.assigned_by), 
+            "image_url": task.image_url  
         } for task, assigned_to in tasks
     ]
     
@@ -61,7 +61,7 @@ def assign_task():
     employee_id = request.form['employee_id']
     priority_level = request.form['priority']
 
-    #  priority
+
     try:
         priority = Priority(custom_priorities)
         priority.set_priority(priority_level)
@@ -69,7 +69,7 @@ def assign_task():
         flash(str(e) if isinstance(e, ValueError) else f'Invalid priority level. Please select from: {", ".join(custom_priorities.keys())}.')
         return redirect(url_for('main.manager_dashboard'))
 
-    # Validate the assigned employee exists
+    
     assigned_to = Employee.query.get(employee_id)
     if not assigned_to:
         flash('Employee not found.')
@@ -104,13 +104,12 @@ def assign_task():
     
     publish_message_to_sns(ASSIGN_TASK_SNS_TOPIC, message)
 
-    # Commit all changes 
+
     db.session.commit()
 
     flash('Task assigned successfully!')
     return redirect(url_for('main.manager_dashboard'))
 
-# Verify task 
 @main_bp.route('/verify_task/<int:task_id>', methods=['POST'])
 def verify_task(task_id):
     task = Task.query.get(task_id)
@@ -159,7 +158,7 @@ def verify_task(task_id):
     return redirect(url_for('main.manager_dashboard'))
 
 
-# Update task description
+
 @main_bp.route('/update_task/<int:task_id>', methods=['POST'])
 def update_task(task_id):
     task = Task.query.get(task_id)
@@ -189,7 +188,7 @@ def delete_task(task_id):
 
 # Employee
 
-# View tasks based on role
+# View tasks based on role for employee
 @main_bp.route('/tasks', methods=['GET'])
 def view_tasks():
     if 'user_id' not in session:
@@ -211,7 +210,6 @@ def employee_dashboard():
     employee = Employee.query.get(user_id)
     tasks = Task.query.filter_by(assigned_to=employee.id).all()
 
-    # Reporting and task summary for the employee
     ind_reporting_instance = Reporting(status_mapping)
     individual_task_summary = {}
 
@@ -229,16 +227,14 @@ def complete_task(task_id):
     task = Task.query.get(task_id)
     user_id = session.get('user_id')
 
-    # Check if task exists and is assigned to the current user
+    
     if task and task.assigned_to == user_id:
-        # Optional image upload
+        
         file = request.files.get("image")
         if file and file.filename:  # If a file is uploaded
-            # Validate file type
             allowed_extensions = {'png', 'jpg', 'jpeg'}
             if file and '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions:
                 filename = secure_filename(file.filename)
-                # UUID to avoid conflicts with the original file names
                 key = f"task_images/{task_id}/{uuid.uuid4()}_{filename}"
                 
                 create_bucket() 
@@ -262,8 +258,6 @@ def complete_task(task_id):
                 return redirect(url_for("main.employee_dashboard"))
 
         if task.image_url:
-            # Check if the pre-signed URL is valid or has expired
-            
             s3_url = task.image_url
             #  regenerate url (if expired)
             # task.image_url = generate_presigned_url(bucket_name, key)

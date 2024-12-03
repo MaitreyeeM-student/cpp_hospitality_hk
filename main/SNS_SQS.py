@@ -4,10 +4,13 @@ import logging
 from .models import Employee
 from dotenv import load_dotenv
 import json
+from .cloudwatch_logger import configure_cloudwatch_logging
 
 load_dotenv()
 
-logging.basicConfig(level=logging.INFO)
+
+configure_cloudwatch_logging()
+logger = logging.getLogger(__name__)
 
 sns_client = boto3.client('sns', region_name='us-east-1')
 sqs_client = boto3.client('sqs', region_name='us-east-1')
@@ -20,13 +23,12 @@ AWS_IAM_ROLE_ARN = os.getenv('AWS_IAM_ROLE_ARN')
 
 
 def setup_notification_services():
-    # Create SNS topic
     sns_topic_arn = create_sns_topic('assign_task_notifications')
     if not sns_topic_arn:
         logging.error("Failed to create SNS topic.")
         return
 
-    # Create SQS queue
+
     queue_url = create_sqs_queue('assign_task_queue')
     if not queue_url:
         logging.error("Failed to create SQS queue.")
@@ -57,7 +59,6 @@ def create_sns_topic(topic_name):
         return topic_arn
     except sns_client.exceptions.ClientError as e:
         if 'TopicAlreadyExists' in str(e):
-            # If the topic already exists, get the existing ARN
             response = sns_client.list_topics()
             for topic in response['Topics']:
                 if topic_name in topic['TopicArn']:
@@ -99,13 +100,11 @@ def create_sqs_queue(queue_name):
     
 def set_sqs_policy_for_sns(queue_url, sns_topic_arn):
     try:
-        # Fetch the ARN of the SQS queue using its URL
         sqs_queue_arn = sqs_client.get_queue_attributes(
             QueueUrl=queue_url,
             AttributeNames=['QueueArn']
         )['Attributes']['QueueArn']
 
-        # Define the policy
         policy = f"""
         {{
             "Version": "2008-10-17",
@@ -125,7 +124,6 @@ def set_sqs_policy_for_sns(queue_url, sns_topic_arn):
         }}
         """
 
-        # Set the policy on the SQS queue
         queue_attributes = {'Policy': policy}
         sqs_client.set_queue_attributes(QueueUrl=queue_url, Attributes=queue_attributes)
         logging.info(f"SQS queue policy updated to allow SNS topic {sns_topic_arn} to send messages.")
@@ -191,7 +189,7 @@ def subscribe_new_employees_to_topic():
 
     existing_subscriptions = get_existing_subscriptions(assign_topic_arn)
 
-    # Fetch all employees with role 'staff'
+    #Get employees with role staff only
     staff_employees = Employee.query.filter_by(role='Staff').all()
     
 

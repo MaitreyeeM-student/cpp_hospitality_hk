@@ -11,7 +11,7 @@ db = SQLAlchemy()
 # Predefined rooms (101-104, 201-204, ..., 505)
 rooms = [f"{floor}0{room}" for floor in range(1, 6) for room in range(1, 5)]
 
-# Predefined task list
+
 predefined_tasks = [
     "Clean room",
     "Restock supplies",
@@ -51,18 +51,18 @@ class Employee(db.Model):
     password = db.Column(db.String(200), nullable=False)
    
     
-    # Relationship for tasks assigned to the employee
+    # Relationship assignment between the tables
     tasks_assigned_to = db.relationship(
         'Task', 
         lazy=True,
-        foreign_keys='Task.assigned_to'  # Link to the assigned_to field in Task
+        foreign_keys='Task.assigned_to'  
     )
 
-    # Relationship for tasks assigned by the employee
+    
     tasks_assigned_by = db.relationship(
         'Task', 
         lazy=True,
-        foreign_keys='Task.assigned_by'  # Link to the assigned_by field in Task
+        foreign_keys='Task.assigned_by' 
     )
 
 
@@ -73,16 +73,16 @@ class Employee(db.Model):
 # Task database model
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    room = db.Column(db.String(100), nullable=False)  # Room name (e.g., 'Room A')
-    description = db.Column(db.String(500), nullable=False)  # Description of task
-    assigned_to = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)  # Employee assigned
-    assigned_by = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)  # Task assigned by
-    complete = db.Column(db.Boolean, default=False)  # Task completion status
+    room = db.Column(db.String(100), nullable=False)  
+    description = db.Column(db.String(500), nullable=False)  
+    assigned_to = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)  
+    assigned_by = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)  
+    complete = db.Column(db.Boolean, default=False)  
     verified = db.Column(db.Boolean, default=False)
-    notes = db.Column(db.String(500), nullable=True)  # Notes upon task completion
+    notes = db.Column(db.String(500), nullable=True) 
     priority = db.Column(db.String(100), nullable=False, default='Normal')
-    assigned_time = db.Column(db.DateTime, default=datetime.now)  # Time when the task is assigned
-    completed_time = db.Column(db.DateTime, nullable=True)  # Time when the task is completed
+    assigned_time = db.Column(db.DateTime, default=datetime.now)  
+    completed_time = db.Column(db.DateTime, nullable=True)  
     image_url = db.Column(db.String(3000), nullable=True)
     
 
@@ -91,8 +91,6 @@ class Task(db.Model):
         
 
 
-
-# Task history model to store completed tasks with timestamps
 class TaskHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     room = db.Column(db.String(100), nullable=False)
@@ -103,10 +101,10 @@ class TaskHistory(db.Model):
     completed_time = db.Column(db.DateTime, nullable=False)
     assigned_time = db.Column(db.DateTime, nullable=False)
     verified_time = db.Column(db.DateTime, nullable=False)
-    image_url = db.Column(db.String(3000), nullable=True)  # Added image_url field
+    image_url = db.Column(db.String(3000), nullable=True)
 
     
-    # Relationships for foreign keys
+    
     assigned_employee = db.relationship(
         'Employee',
         foreign_keys=[assigned_to]

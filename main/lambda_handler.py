@@ -7,7 +7,6 @@ import logging
 s3 = boto3.client('s3')
 
 def resize_image(image_data, size=(300, 300)):
-    """Resize the image to the specified size."""
     try:
         logging.info("Resizing the image...")
         image = Image.open(io.BytesIO(image_data))
